@@ -1,6 +1,6 @@
 {
   "name": "wess",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Invokes the Less compiler in watch mode, triggering a recompilation whenever the dependencies change.",
   "keywords": [
     "css",
