@@ -27,8 +27,12 @@ module.exports = function(path, opts) {
   }
 
   // Compile the source.
+  // Use the less.render() promise interface because the regular one appears
+  // to occasionally call the callback multiple times.
   function compile(source, done) {
-    less.render(source, opts, done);
+    less.render(source, opts)
+      .then(function(output) { done(null, output); },
+            function(err) { done(err); });
   }
 
   // Iterate all dependencies and add any new ones to the watch list.
