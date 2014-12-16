@@ -1,0 +1,29 @@
+{
+  "name": "wess",
+  "version": "0.1.0",
+  "description": "Invokes the Less compiler in watch mode, triggering a recompilation whenever the dependencies change.",
+  "keywords": [
+    "css",
+    "less",
+    "watch"
+  ],
+  "author": {
+    "name": "Tiago Quelhas",
+    "email": "tiagoq@gmail.com>"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tjgq/wess.git"
+  },
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "async": "^0.9.0",
+    "chokidar": "^0.12.4",
+    "extend": "^2.0.0",
+    "less": "^2.1.1"
+  }
+}
