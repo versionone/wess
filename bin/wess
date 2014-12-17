@@ -1,0 +1,88 @@
+#!/usr/bin/env node
+
+var fs = require('fs');
+var path = require('path');
+var wess = require('../lib/wess');
+
+// Define command line options.
+var argv = require('yargs')
+  .usage('Compile a LESS source file whenever the dependencies change.\n' +
+         'Usage: $0 [-x] [-m] [-p] [-v] -i input -o output')
+  .describe('i', 'input file')
+  .alias('i', 'input')
+  .describe('o', 'output file')
+  .alias('o', 'output')
+  .describe('x', 'compress output')
+  .alias('x', 'compress')
+  .describe('m', 'generate inline source map')
+  .alias('m', 'sourcemap')
+  .describe('p', 'add vendor prefixes')
+  .alias('p', 'autoprefix')
+  .describe('v', 'show details')
+  .alias('v', 'verbose')
+  .demand(['i', 'o'])
+  .argv;
+
+var stderr = process.stderr;
+
+var input = argv.input;
+var output = argv.output;
+var compress = argv.compress;
+var sourcemap = argv.sourcemap;
+var autoprefix = argv.autoprefix;
+var verbose = argv.verbose;
+
+lessOpts = {};
+
+// Compress output?
+if (compress) {
+  lessOpts.compress = true;
+}
+
+// Generate inline source map?
+if (sourcemap) {
+  lessOpts.sourceMap = { sourceMapFileInline: true };
+}
+
+// Add vendor prefixes?
+if (autoprefix) {
+  var Autoprefix = require('less-plugin-autoprefix');
+  lessOpts.plugins = [ new Autoprefix({ browsers: [ '> 0%' ] }) ];
+}
+
+// Whether a successful compilation has already occurred.
+// If an error occurs on the first compilation, exit immediately since the
+// dependency list could not be inferred.
+var compiledOnce = false;
+
+// Start watching.
+var watcher = wess(input, lessOpts);
+
+watcher.on('compile', function(result) {
+  fs.writeFile(output, result.css, 'utf8', function(err) {
+    if (err) {
+      // Report write error.
+      stderr.write(err.toString() + '\n');
+    }
+    else if (verbose) {
+      // Report successful compilation.
+      var len = result.css.length;
+      process.stderr.write('Compiled ' + output + ', ' + len + ' bytes\n');
+    }
+    compiledOnce = true;
+  });
+});
+
+watcher.on('error', function(err) {
+  if (err.filename && err.line) {
+    // Report parse error.
+    stderr.write(err.filename + ':' + err.line + ': ' + err.message + '\n');
+  } else {
+    // Report other errors.
+    stderr.write(err.toString() + '\n');
+  }
+  // If the error occurred on the first compilation, exit.
+  if (!compiledOnce) {
+    process.exit(1);
+  }
+});
