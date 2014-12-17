@@ -1,38 +1,40 @@
 #!/usr/bin/env node
 
 var fs = require('fs');
-var path = require('path');
 var wess = require('../lib/wess');
 
 // Define command line options.
 var argv = require('yargs')
-  .usage('Compile a LESS source file whenever the dependencies change.\n' +
-         'Usage: $0 [-x] [-m] [-p] [-v] -i input -o output')
+  .usage('Usage: $0 [-w] [-x] [-m] [-p] -i input -o output')
   .describe('i', 'input file')
   .alias('i', 'input')
   .describe('o', 'output file')
   .alias('o', 'output')
+  .describe('w', 'watch and recompile on changes')
+  .alias('w', 'watch')
   .describe('x', 'compress output')
   .alias('x', 'compress')
   .describe('m', 'generate inline source map')
   .alias('m', 'sourcemap')
   .describe('p', 'add vendor prefixes')
   .alias('p', 'autoprefix')
-  .describe('v', 'show details')
+  .describe('v', 'show verbose output')
   .alias('v', 'verbose')
-  .demand(['i', 'o'])
+  .requiresArg(['i', 'o'])
+  .required(['i', 'o'])
   .argv;
 
 var stderr = process.stderr;
 
 var input = argv.input;
 var output = argv.output;
+var watch = argv.watch;
 var compress = argv.compress;
 var sourcemap = argv.sourcemap;
 var autoprefix = argv.autoprefix;
 var verbose = argv.verbose;
 
-lessOpts = {};
+var lessOpts = {};
 
 // Compress output?
 if (compress) {
@@ -50,30 +52,28 @@ if (autoprefix) {
   lessOpts.plugins = [ new Autoprefix({ browsers: [ '> 0%' ] }) ];
 }
 
-// Whether a successful compilation has already occurred.
-// If an error occurs on the first compilation, exit immediately since the
-// dependency list could not be inferred.
-var compiledOnce = false;
-
-// Start watching.
-var watcher = wess(input, lessOpts);
-
-watcher.on('compile', function(result) {
-  fs.writeFile(output, result.css, 'utf8', function(err) {
-    if (err) {
-      // Report write error.
-      stderr.write(err.toString() + '\n');
-    }
-    else if (verbose) {
-      // Report successful compilation.
-      var len = result.css.length;
-      process.stderr.write('Compiled ' + output + ', ' + len + ' bytes\n');
-    }
-    compiledOnce = true;
+if (watch) {
+  // Watch mode. Keep watching for changes and recompile when they occur.
+  var watcher = wess(input, lessOpts);
+  watcher.on('compile', success);
+  watcher.on('error', error);
+} else {
+  // Single-shot mode. Compile once and return status.
+  var watcher = wess(input, lessOpts);
+  watcher.on('compile', function(result) {
+    success(result);
+    watcher.close();
+    process.exit(0);
   });
-});
+  watcher.on('error', function(err) {
+    error(err);
+    watcher.close();
+    process.exit(1);
+  });
+}
 
-watcher.on('error', function(err) {
+// Error handler.
+function error(err) {
   if (err.filename && err.line) {
     // Report parse error.
     stderr.write(err.filename + ':' + err.line + ': ' + err.message + '\n');
@@ -81,8 +81,19 @@ watcher.on('error', function(err) {
     // Report other errors.
     stderr.write(err.toString() + '\n');
   }
-  // If the error occurred on the first compilation, exit.
-  if (!compiledOnce) {
-    process.exit(1);
+}
+
+// Success handler.
+function success(result) {
+  try {
+    fs.writeFileSync(output, result.css);
+    // Report successful compilation.
+    if (verbose) {
+      var len = result.css.length;
+      stderr.write('Compiled ' + output + ', ' + len + ' bytes\n');
+    }
+  } catch (err) {
+    // Report write error.
+    stderr.write(err.toString() + '\n');
   }
-});
+}
