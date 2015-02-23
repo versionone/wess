@@ -16,8 +16,6 @@ var argv = require('yargs')
   .alias('x', 'compress')
   .describe('m', 'generate inline source map')
   .alias('m', 'sourcemap')
-  .describe('p', 'add vendor prefixes')
-  .alias('p', 'autoprefix')
   .describe('v', 'show verbose output')
   .alias('v', 'verbose')
   .requiresArg(['i', 'o'])
@@ -31,7 +29,6 @@ var output = argv.output;
 var watch = argv.watch;
 var compress = argv.compress;
 var sourcemap = argv.sourcemap;
-var autoprefix = argv.autoprefix;
 var verbose = argv.verbose;
 
 var lessOpts = {};
@@ -44,12 +41,6 @@ if (compress) {
 // Generate inline source map?
 if (sourcemap) {
   lessOpts.sourceMap = { sourceMapFileInline: true };
-}
-
-// Add vendor prefixes?
-if (autoprefix) {
-  var Autoprefix = require('less-plugin-autoprefix');
-  lessOpts.plugins = [ new Autoprefix({ browsers: [ '> 0%' ] }) ];
 }
 
 if (watch) {
