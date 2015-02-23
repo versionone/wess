@@ -55,6 +55,7 @@ if (autoprefix) {
 if (watch) {
   // Watch mode. Keep watching for changes and recompile when they occur.
   var watcher = wess(input, lessOpts);
+  watcher.on('change', change);
   watcher.on('compile', success);
   watcher.on('error', error);
 } else {
@@ -70,6 +71,12 @@ if (watch) {
     watcher.close();
     process.exit(1);
   });
+}
+
+function change(path) {
+  if (verbose) {
+    stderr.write('Change detected in file: ' + path + '\n');
+  }
 }
 
 // Error handler.
