@@ -28,7 +28,7 @@
     "async": "^0.9.0",
     "chokidar": "^0.12.4",
     "extend": "^2.0.0",
-    "less": "^2.1.1",
+    "less": "*",
     "less-plugin-autoprefix": "^1.0.1",
     "yargs": "^1.3.3"
   }
