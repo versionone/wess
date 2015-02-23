@@ -15,7 +15,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tjgq/wess.git"
+    "url": "https://github.com/versionone/wess.git"
   },
   "main": "index.js",
   "bin": {
